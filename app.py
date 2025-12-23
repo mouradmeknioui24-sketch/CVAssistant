@@ -1,24 +1,27 @@
 import streamlit as st
-from dotenv import load_dotenv
-import json, re
+import os
+import json
+import re
 from pypdf import PdfReader
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
+from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-import os
 from langchain_core.messages import SystemMessage, HumanMessage
-
-# -------------------- ENV & MODELS --------------------
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-llm = ChatOpenAI(model="gpt-4o", temperature=0,openai_api_key=OPENAI_API_KEY)
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # -------------------- PAGE CONFIG --------------------
 st.set_page_config(page_title="🤖 AI CV Assistant", layout="wide")
 st.markdown("<h1 style='text-align:center; color:#4B0082;'>🤖 AI CV Assistant</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#666;'>Upload CV & Job Description, see matching score, and interview the candidate.</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#666;'>Upload CV & Job Description for analysis</p>", unsafe_allow_html=True)
 st.markdown("---")
+
+# -------------------- SECRETS --------------------
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    st.warning("❌ OpenAI API key not set. Please set it in Streamlit Secrets.")
+llm = ChatOpenAI(model="gpt-4o", temperature=0, openai_api_key=openai_api_key)
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key)
 
 # -------------------- SESSION STATE --------------------
 for key in ["cv_profile", "vectorstore", "chat_history", "job_profile", "match_analysis"]:
@@ -41,21 +44,47 @@ def extract_text_from_pdf(file) -> list[Document]:
             docs.append(Document(page_content=text, metadata={"page": i+1}))
     return docs
 
-# -------------------- SIDEBAR UPLOAD --------------------
-st.sidebar.header("📂 Upload Files")
-uploaded_cv = st.sidebar.file_uploader("Upload Candidate CV (PDF)", type=["pdf"])
-uploaded_jd = st.sidebar.file_uploader("Upload Job Description (PDF or TXT)", type=["pdf","txt"])
+def extract_cv_profile(documents: list[Document]) -> dict:
+    full_text = "\n\n".join(d.page_content for d in documents)
+    prompt = f"Return only JSON with CV info. CV TEXT: {full_text}"
+    response = llm.invoke([SystemMessage(content="CV parser"), HumanMessage(content=prompt)])
+    return safe_json_load(response.content)
+
+def extract_job_profile(text: str) -> dict:
+    prompt = f"Return only JSON with Job info. JOB TEXT: {text}"
+    response = llm.invoke([SystemMessage(content="Job parser"), HumanMessage(content=prompt)])
+    return safe_json_load(response.content)
+
+def analyze_match(cv: dict, job: dict) -> dict:
+    prompt = f"Return only JSON with match_score (0-100), strengths, missing_skills, reason. CV: {json.dumps(cv)} JOB: {json.dumps(job)}"
+    response = llm.invoke([SystemMessage(content="Match analyzer"), HumanMessage(content=prompt)])
+    return safe_json_load(response.content)
+
+# -------------------- FILE UPLOAD UI --------------------
+st.markdown("### 📂 Upload Documents", unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1,3,1])
+with col2:
+    st.markdown(
+        "<div style='background-color:#E6E6FA; padding:20px; border-radius:15px; text-align:center;'>"
+        "<h3 style='color:#4B0082;'>📂 Upload Candidate CV (PDF)</h3>"
+        "<p style='color:#666;'>Tap the button below to select your file</p>"
+        "</div>", unsafe_allow_html=True
+    )
+    uploaded_cv = st.file_uploader("", type=["pdf"], key="cv", help="Upload CV PDF here")
+
+    st.markdown(
+        "<div style='background-color:#FFF0F5; padding:20px; border-radius:15px; text-align:center; margin-top:20px;'>"
+        "<h3 style='color:#4B0082;'>📄 Upload Job Description (PDF/TXT)</h3>"
+        "<p style='color:#666;'>Tap the button below to select the job file</p>"
+        "</div>", unsafe_allow_html=True
+    )
+    uploaded_jd = st.file_uploader("", type=["pdf","txt"], key="jd", help="Upload Job Description here")
 
 # -------------------- PROCESS CV --------------------
 if uploaded_cv and st.session_state.cv_profile is None:
     with st.spinner("Processing CV..."):
         pages = extract_text_from_pdf(uploaded_cv)
-        full_text = "\n\n".join(p.page_content for p in pages)
-        prompt = f"Return only JSON with CV info. CV TEXT: {full_text}"
-        response = llm.invoke([SystemMessage(content="CV parser"), HumanMessage(content=prompt)])
-        st.session_state.cv_profile = safe_json_load(response.content)
-
-        # Vector store for semantic search
+        st.session_state.cv_profile = extract_cv_profile(pages)
         splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = splitter.split_documents(pages)
         st.session_state.vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings)
@@ -66,22 +95,17 @@ if uploaded_jd and st.session_state.job_profile is None:
     with st.spinner("Processing Job Description..."):
         if uploaded_jd.type == "application/pdf":
             jd_pages = extract_text_from_pdf(uploaded_jd)
-            jd_text = "\n\n".join(p.page_content for p in jd_pages)
+            jd_text = "\n\n".join(d.page_content for d in jd_pages)
         else:
             jd_text = uploaded_jd.read().decode("utf-8")
-        prompt = f"Return only JSON with Job info. JOB TEXT: {jd_text}"
-        response = llm.invoke([SystemMessage(content="Job parser"), HumanMessage(content=prompt)])
-        st.session_state.job_profile = safe_json_load(response.content)
+        st.session_state.job_profile = extract_job_profile(jd_text)
     st.success("✅ Job Description processed successfully")
 
 # -------------------- MATCH ANALYSIS --------------------
 if st.session_state.cv_profile and st.session_state.job_profile and not st.session_state.match_analysis:
     with st.spinner("Analyzing CV-Job match..."):
-        prompt = f"Return only JSON with match_score, strengths, missing_skills, reason. CV: {json.dumps(st.session_state.cv_profile)} JOB: {json.dumps(st.session_state.job_profile)}"
-        response = llm.invoke([SystemMessage(content="Match analyzer"), HumanMessage(content=prompt)])
-        st.session_state.match_analysis = safe_json_load(response.content)
+        st.session_state.match_analysis = analyze_match(st.session_state.cv_profile, st.session_state.job_profile)
 
-# -------------------- DISPLAY MATCH --------------------
 if st.session_state.match_analysis:
     score = st.session_state.match_analysis.get("match_score","N/A")
     reason = st.session_state.match_analysis.get("reason","No reason provided.")
