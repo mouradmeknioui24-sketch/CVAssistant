@@ -7,3 +7,4 @@ chromadb
 langchain-openai
 langchain-text-splitters
 langchain-chroma
+os
