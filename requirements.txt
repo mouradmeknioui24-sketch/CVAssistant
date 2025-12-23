@@ -5,3 +5,4 @@ langchain
 openai
 chromadb
 langchain-openai
+langchain-text-splitters
