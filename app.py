@@ -11,7 +11,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 
 # -------------------- ENV & MODELS --------------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-llm = ChatOpenAI(model="gpt-4o", temperature=0,openai_api_key=openai_api_key)
+llm = ChatOpenAI(model="gpt-4o", temperature=0,openai_api_key=OPENAI_API_KEY)
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # -------------------- PAGE CONFIG --------------------
