@@ -94,7 +94,7 @@ if uploaded_jd and st.session_state.job_profile is None:
     with st.spinner("Processing Job Description..."):
         if uploaded_jd.type == "application/pdf":
             jd_pages = extract_text_from_pdf(uploaded_jd)
-            jd_text = "\n\n".join(d.page_content for d in jd_pages)
+            jd_text = "\n\n".join(d.page_content for p in jd_pages)
         else:
             jd_text = uploaded_jd.read().decode("utf-8")
         st.session_state.job_profile = extract_job_profile(jd_text)
@@ -135,9 +135,36 @@ Rules: Highlight strengths, address gaps honestly, confident, no invented experi
         response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=f"Question: {question}\nContext:\n{context}")])
         st.session_state.chat_history.append((question, response.content))
 
-# -------------------- DISPLAY CHAT --------------------
+# -------------------- DISPLAY CHAT WITH BUBBLES --------------------
 if st.session_state.chat_history:
-    for q,a in reversed(st.session_state.chat_history):
-        st.markdown(f"<div style='background-color:#F0F0F0;padding:10px;border-radius:8px'><b>HR:</b> {q}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='background-color:#E6E6FA;padding:10px;border-radius:8px'><b>Candidate:</b> {a}</div>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+    for q, a in reversed(st.session_state.chat_history):
+        # HR question
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#F0F0F0;
+                padding:12px;
+                border-radius:12px;
+                margin-bottom:5px;
+                color:#000;
+            ">
+            <b>HR:</b> {q}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        # Candidate answer
+        st.markdown(
+            f"""
+            <div style="
+                background-color:#E6E6FA;
+                padding:12px;
+                border-radius:12px;
+                margin-bottom:10px;
+                color:#000;
+            ">
+            <b>Candidate:</b> {a}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
