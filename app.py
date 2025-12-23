@@ -5,11 +5,9 @@ from pypdf import PdfReader
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
-from langchain_core.documents import Document
-from langchain_core.messages import SystemMessage, HumanMessage
+import os
 
-# -------------------- ENV & MODELS --------------------
-load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
