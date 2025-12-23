@@ -6,11 +6,12 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+import os
 from langchain_core.messages import SystemMessage, HumanMessage
 
 # -------------------- ENV & MODELS --------------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatOpenAI(model="gpt-4o", temperature=0,openai_api_key=openai_api_key)
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # -------------------- PAGE CONFIG --------------------
