@@ -1,13 +1,12 @@
 import streamlit as st
-import os
-import json
-import re
+from dotenv import load_dotenv
+import json, re
 from pypdf import PdfReader
-from langchain.chat_models import ChatOpenAI
-from langchain.embeddings.openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+import os
 from langchain_core.messages import SystemMessage, HumanMessage
 
 # -------------------- PAGE CONFIG --------------------
