@@ -144,63 +144,71 @@ if st.session_state.match_analysis:
     score = st.session_state.match_analysis["match_score"]
     reason = st.session_state.match_analysis["reason"]
 
-    st.markdown(
-        f"""
+   st.markdown(
+    f"""
+    <div style="
+        background: linear-gradient(135deg, #F0FDF4, #ECFEFF);
+        border: 1px solid #D1FAE5;
+        padding: 18px;
+        border-radius: 14px;
+        margin-top: 16px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+        color: #064E3B;
+    ">
+
         <div style="
-            background: linear-gradient(135deg, #F0FDF4, #ECFEFF);
-            border: 1px solid #D1FAE5;
-            padding: 18px;
-            border-radius: 14px;
-            margin-top: 16px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-            color: #064E3B;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
         ">
-
-            <div style="
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                margin-bottom: 8px;
-            ">
-                <div style="font-size: 14px; letter-spacing: 0.08em; font-weight: 600; color:#047857;">
-                    MATCH SCORE
-                </div>
-                <div style="
-                    font-size: 28px;
-                    font-weight: 800;
-                    color: #065F46;
-                ">
-                    {score}%
-                </div>
-            </div>
-
-            <div style="
-                height: 6px;
-                width: 100%;
-                background-color: #D1FAE5;
-                border-radius: 4px;
-                overflow: hidden;
-                margin-bottom: 12px;
-            ">
-                <div style="
-                    width: {score}%;
-                    height: 100%;
-                    background: linear-gradient(90deg, #10B981, #22D3EE);
-                "></div>
-            </div>
-
             <div style="
                 font-size: 14px;
-                line-height: 1.6;
-                color: #064E3B;
+                letter-spacing: 0.08em;
+                font-weight: 600;
+                color:#047857;
             ">
-                <b>Why this match:</b><br/>
-                {reason}
+                MATCH SCORE
+            </div>
+
+            <div style="
+                font-size: 28px;
+                font-weight: 800;
+                color: #065F46;
+            ">
+                {score}%
             </div>
         </div>
-        """,
-        unsafe_allow_html=True
-    )
+
+        <div style="
+            height: 6px;
+            width: 100%;
+            background-color: #D1FAE5;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        ">
+            <div style="
+                width: {score}%;
+                height: 100%;
+                background: linear-gradient(90deg, #10B981, #22D3EE);
+            "></div>
+        </div>
+
+        <div style="
+            font-size: 14px;
+            line-height: 1.6;
+            color: #064E3B;
+        ">
+            <b>Why this match:</b><br/>
+            {reason}
+        </div>
+
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 # --------------------------------------------------
