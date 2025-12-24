@@ -8,6 +8,8 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_core.messages import SystemMessage, HumanMessage
 import os
+import requests
+from bs4 import BeautifulSoup
 
 # --------------------------------------------------
 # ENV
@@ -94,25 +96,6 @@ st.markdown("""
 # HELPERS
 # --------------------------------------------------
 def safe_json(text):
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match:
-        raise ValueError("No JSON found")
-    return json.loads(match.group(0))
-
-def extract_pdf(file):
-    reader = PdfReader(file)
-    docs = []
-    for i, page in enumerate(reader.pages):
-        if page.extract_text():
-            docs.append(Document(page_content=page.extract_text(), metadata={"page": i+1}))
-    return docs
-
-def parse_cv(docs):
-    text = "\n\n".join(d.page_content for d in docs)
-    prompt = f"Return ONLY valid JSON with CV info:\n{text}"
-    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
-    
-def safe_json(text):
     """Try to extract JSON from LLM output robustly."""
     if not text or not text.strip():
         st.error("LLM returned empty output. Try again.")
@@ -129,6 +112,19 @@ def safe_json(text):
         st.error(f"Raw JSON string:\n{match.group(0)}")
         return {}
 
+def extract_pdf(file):
+    reader = PdfReader(file)
+    docs = []
+    for i, page in enumerate(reader.pages):
+        if page.extract_text():
+            docs.append(Document(page_content=page.extract_text(), metadata={"page": i+1}))
+    return docs
+
+def parse_cv(docs):
+    text = "\n\n".join(d.page_content for d in docs)
+    prompt = f"Return ONLY valid JSON with CV info:\n{text}"
+    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
+
 def parse_job(text):
     prompt = f"Return ONLY valid JSON with Job info:\n{text}"
     return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
@@ -143,11 +139,21 @@ JOB: {json.dumps(job)}
 """
     return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
-# Placeholder for job link scraping
+# --------------------------------------------------
+# FETCH JOB TEXT FROM URL
+# --------------------------------------------------
 def fetch_job_text_from_link(url):
-    # For production, implement actual scraping or API fetch
-    # Here we return a placeholder text
-    return f"Job description fetched from {url}"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        for script in soup(["script", "style"]):
+            script.decompose()
+        text = soup.get_text(separator="\n")
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Could not fetch page content: {e}"
 
 # --------------------------------------------------
 # UPLOAD CV
