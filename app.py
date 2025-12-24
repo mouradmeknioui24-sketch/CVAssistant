@@ -144,9 +144,9 @@ if st.session_state.match_analysis:
     score = st.session_state.match_analysis["match_score"]
     reason = st.session_state.match_analysis["reason"]
 
-   st.markdown(
-    f"""
-    <div style="
+    st.markdown(
+     f"""
+     <div style="
         background: linear-gradient(135deg, #F0FDF4, #ECFEFF);
         border: 1px solid #D1FAE5;
         padding: 18px;
@@ -154,7 +154,7 @@ if st.session_state.match_analysis:
         margin-top: 16px;
         box-shadow: 0 8px 24px rgba(0,0,0,0.04);
         color: #064E3B;
-    ">
+     ">
 
         <div style="
             display: flex;
@@ -204,8 +204,8 @@ if st.session_state.match_analysis:
             {reason}
         </div>
 
-    </div>
-    """,
+     </div>
+     """,
     unsafe_allow_html=True
 )
 
