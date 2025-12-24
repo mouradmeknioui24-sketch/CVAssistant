@@ -147,23 +147,55 @@ if st.session_state.match_analysis:
     st.markdown(
         f"""
         <div style="
-            background-color:#2F3632;
-            border-left:6px solid #10B981;
-            padding:14px;
-            border-radius:10px;
-            color:#064E3B;
-            margin-top:12px;
+            background: #F9FAFB;
+            border-left: 6px solid #10B981;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-top: 16px;
+            color: #111827;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         ">
-            <div style="font-size:26px; font-weight:700;">
-                Match Score: {score}%
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 10px;
+            ">
+                <div style="font-size: 14px; font-weight: 600; color:#065F46; letter-spacing:0.05em;">
+                    MATCH SCORE
+                </div>
+                <div style="font-size: 32px; font-weight: 700; color:#047857;">
+                    {score}%
+                </div>
             </div>
-            <div style="margin-top:6px; font-size:14px;">
-                <b>Reason:</b> {reason}
+
+            <div style="
+                height: 8px;
+                width: 100%;
+                background-color: #D1FAE5;
+                border-radius: 4px;
+                overflow: hidden;
+                margin-bottom: 14px;
+            ">
+                <div style="
+                    width: {score}%;
+                    height: 100%;
+                    background: linear-gradient(90deg, #10B981, #22D3EE);
+                    border-radius: 4px;
+                    transition: width 0.5s ease-in-out;
+                "></div>
+            </div>
+
+            <div style="font-size: 14px; line-height: 1.6; color: #111827;">
+                <b>Why this match:</b><br/>
+                {reason}
             </div>
         </div>
         """,
         unsafe_allow_html=True
     )
+
 
 # --------------------------------------------------
 # INTERVIEW
