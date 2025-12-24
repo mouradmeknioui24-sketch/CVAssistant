@@ -111,6 +111,23 @@ def parse_cv(docs):
     text = "\n\n".join(d.page_content for d in docs)
     prompt = f"Return ONLY valid JSON with CV info:\n{text}"
     return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
+    
+def safe_json(text):
+    """Try to extract JSON from LLM output robustly."""
+    if not text or not text.strip():
+        st.error("LLM returned empty output. Try again.")
+        return {}
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        st.error("Could not find valid JSON in LLM output. Please check your input.")
+        st.error(f"Raw output:\n{text}")
+        return {}
+    try:
+        return json.loads(match.group(0))
+    except Exception as e:
+        st.error(f"Error parsing JSON: {e}")
+        st.error(f"Raw JSON string:\n{match.group(0)}")
+        return {}
 
 def parse_job(text):
     prompt = f"Return ONLY valid JSON with Job info:\n{text}"
