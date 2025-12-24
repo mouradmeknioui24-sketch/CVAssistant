@@ -133,6 +133,13 @@ if uploaded_jd and not st.session_state.job_profile:
 # --------------------------------------------------
 # MATCH ANALYSIS
 # --------------------------------------------------
+if st.session_state.cv_profile and st.session_state.job_profile and not st.session_state.match_analysis:
+    with st.spinner("Analyzing match..."):
+        st.session_state.match_analysis = match_cv_job(
+            st.session_state.cv_profile,
+            st.session_state.job_profile
+        )
+
 if st.session_state.match_analysis:
     score = st.session_state.match_analysis["match_score"]
     reason = st.session_state.match_analysis["reason"]
@@ -157,7 +164,6 @@ if st.session_state.match_analysis:
         """,
         unsafe_allow_html=True
     )
-
 
 # --------------------------------------------------
 # INTERVIEW
