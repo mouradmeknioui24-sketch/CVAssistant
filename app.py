@@ -30,8 +30,10 @@ st.markdown("""
         font-size:12px;
         font-weight:600;
         color:#047857;
-        letter-spacing:0.08em;">
-        POWERED BY <a href="https://findreward.net" target="_blank" style="color:#047857; text-decoration:none;">FindReward.net</a>
+        letter-spacing:0.08em;
+    ">
+        POWERED BY <a href="https://findreward.net" target="_blank"
+        style="color:#047857; text-decoration:none;">FindReward.net</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -56,6 +58,7 @@ for key, default in {
     "match_analysis": None,
     "vectorstore": None,
     "chat_history": [],
+    "job_input_method": None
 }.items():
     if key not in st.session_state:
         st.session_state[key] = default
@@ -68,6 +71,7 @@ st.markdown("""
 .upload-hint { font-size:0.85rem; color:#6b7280; margin-bottom:0.25rem; }
 .chat-hr { background:#F3F4F6; padding:12px; border-radius:12px; margin-bottom:6px; color:#111827; }
 .chat-candidate { background:#ECFDF5; padding:12px; border-radius:12px; margin-bottom:14px; color:#064E3B; }
+.match-box { background:#ECFDF5; border-left:5px solid #10B981; padding:12px; border-radius:8px; margin-top:12px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -75,29 +79,17 @@ st.markdown("""
 # HELPERS
 # --------------------------------------------------
 def safe_json(text):
-    """Robust JSON extraction from LLM output"""
-    if not text or not text.strip():
-        st.error("LLM returned empty output. Try again.")
-        return {}
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
-        st.error("Could not find valid JSON in LLM output. See raw output below:")
-        st.text(text)
-        return {}
-    try:
-        return json.loads(match.group(0))
-    except Exception as e:
-        st.error(f"Error parsing JSON: {e}")
-        st.text(match.group(0))
-        return {}
+        raise ValueError("No JSON found")
+    return json.loads(match.group(0))
 
 def extract_pdf(file):
     reader = PdfReader(file)
     docs = []
     for i, page in enumerate(reader.pages):
-        text = page.extract_text()
-        if text:
-            docs.append(Document(page_content=text, metadata={"page": i+1}))
+        if page.extract_text():
+            docs.append(Document(page_content=page.extract_text(), metadata={"page": i+1}))
     return docs
 
 def parse_cv(docs):
@@ -119,63 +111,76 @@ JOB: {json.dumps(job)}
 """
     return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
-def scrape_job_link(url):
+def scrape_job_from_url(url):
     try:
-        r = requests.get(url, timeout=5)
+        r = requests.get(url)
         soup = BeautifulSoup(r.text, "html.parser")
-        return soup.get_text(separator="\n")
+        text = soup.get_text(separator="\n")
+        return text
     except Exception as e:
-        st.error(f"Failed to fetch URL: {e}")
+        st.error(f"Error scraping URL: {e}")
         return ""
 
 # --------------------------------------------------
-# UPLOAD / INPUT UI
+# UPLOAD CV
 # --------------------------------------------------
-st.markdown("### 📂 Upload Documents or Provide Job Info")
-
-st.markdown("<div class='upload-hint'>⬆️ Upload candidate CV (PDF)</div>", unsafe_allow_html=True)
-uploaded_cv = st.file_uploader("CV", type=["pdf"], label_visibility="collapsed")
-
-st.markdown("<div class='upload-hint'>⬆️ Upload job description (PDF/TXT)</div>", unsafe_allow_html=True)
-uploaded_jd = st.file_uploader("JD", type=["pdf", "txt"], label_visibility="collapsed")
-
-st.markdown("<div class='upload-hint'>🔗 Or provide a Job Description link (Indeed, LinkedIn, etc.)</div>", unsafe_allow_html=True)
-job_link = st.text_input("Job URL")
-
-st.markdown("<div class='upload-hint'>✏️ Or paste Job Description text</div>", unsafe_allow_html=True)
-job_text = st.text_area("Job Text")
-
-# --------------------------------------------------
-# PROCESS CV
-# --------------------------------------------------
+st.markdown("### 📂 Upload Candidate CV")
+uploaded_cv = st.file_uploader("Upload CV (PDF)", type=["pdf"], label_visibility="collapsed")
 if uploaded_cv and not st.session_state.cv_profile:
     with st.spinner("Processing CV..."):
         cv_docs = extract_pdf(uploaded_cv)
         st.session_state.cv_profile = parse_cv(cv_docs)
+
         splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = splitter.split_documents(cv_docs)
         st.session_state.vectorstore = Chroma.from_documents(chunks, embeddings)
     st.success("✅ CV processed")
 
 # --------------------------------------------------
-# PROCESS JOB (UPLOAD / LINK / PASTE)
+# JOB INPUT METHOD
 # --------------------------------------------------
-if not st.session_state.job_profile:
-    jd_content = ""
-    if uploaded_jd:
-        if uploaded_jd.type == "application/pdf":
-            jd_docs = extract_pdf(uploaded_jd)
-            jd_content = "\n\n".join(d.page_content for d in jd_docs)
-        else:
-            jd_content = uploaded_jd.read().decode("utf-8")
-    elif job_link:
-        jd_content = scrape_job_link(job_link)
-    elif job_text:
-        jd_content = job_text
+st.markdown("### 📄 Provide Job Description")
 
-    if jd_content:
+col1, col2, col3 = st.columns(3)
+with col1:
+    if st.button("Upload JD PDF/TXT"):
+        st.session_state.job_input_method = "upload"
+with col2:
+    if st.button("Paste JD Text"):
+        st.session_state.job_input_method = "paste"
+with col3:
+    if st.button("Provide Job URL"):
+        st.session_state.job_input_method = "url"
+
+# --------------------------------------------------
+# HANDLE JOB INPUT
+# --------------------------------------------------
+if st.session_state.job_input_method == "upload":
+    uploaded_jd = st.file_uploader("Upload Job Description", type=["pdf","txt"], key="jd_upload")
+    if uploaded_jd and not st.session_state.job_profile:
         with st.spinner("Processing Job Description..."):
-            st.session_state.job_profile = parse_job(jd_content)
+            if uploaded_jd.type == "application/pdf":
+                jd_docs = extract_pdf(uploaded_jd)
+                jd_text = "\n\n".join(d.page_content for d in jd_docs)
+            else:
+                jd_text = uploaded_jd.read().decode("utf-8")
+            st.session_state.job_profile = parse_job(jd_text)
+        st.success("✅ Job Description processed")
+
+elif st.session_state.job_input_method == "paste":
+    jd_text = st.text_area("Paste Job Description Here")
+    if jd_text and not st.session_state.job_profile:
+        with st.spinner("Processing pasted Job Description..."):
+            st.session_state.job_profile = parse_job(jd_text)
+        st.success("✅ Job Description processed")
+
+elif st.session_state.job_input_method == "url":
+    jd_url = st.text_input("Enter Job URL")
+    if jd_url and not st.session_state.job_profile:
+        with st.spinner("Fetching Job Description from URL..."):
+            jd_text = scrape_job_from_url(jd_url)
+            if jd_text:
+                st.session_state.job_profile = parse_job(jd_text)
         st.success("✅ Job Description processed")
 
 # --------------------------------------------------
@@ -189,21 +194,16 @@ if st.session_state.cv_profile and st.session_state.job_profile and not st.sessi
         )
 
 if st.session_state.match_analysis:
-    score = st.session_state.match_analysis.get("match_score","N/A")
-    reason = st.session_state.match_analysis.get("reason","No reason provided.")
-    st.markdown(f"""
-    <div style="
-        background-color:#2F3632;
-        border-left:6px solid #10B981;
-        padding:14px;
-        border-radius:10px;
-        color:#F7F5F5;
-        margin-top:12px;
-    ">
-        <div style="font-size:26px; font-weight:700;">Match Score: {score}%</div>
-        <div style="margin-top:6px; font-size:14px;"><b>Reason:</b> {reason}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    score = st.session_state.match_analysis["match_score"]
+    reason = st.session_state.match_analysis["reason"]
+    st.markdown(
+        f"""
+        <div style="background-color:#2F3632; border-left:6px solid #10B981; padding:14px; border-radius:10px; color:#F7F5F5; margin-top:12px;">
+            <div style="font-size:26px; font-weight:700;">Match Score: {score}%</div>
+            <div style="margin-top:6px; font-size:14px;"><b>Reason:</b> {reason}</div>
+        </div>
+        """, unsafe_allow_html=True
+    )
 
 # --------------------------------------------------
 # INTERVIEW
@@ -247,6 +247,7 @@ for q, a in reversed(st.session_state.chat_history):
 st.markdown("""
 <hr/>
 <div style="text-align:center; font-size:12px; color:#6B7280;">
-    © 2025 <a href="https://findreward.net" target="_blank" style="color:#047857; text-decoration:none;">FindReward.net</a> — All rights reserved
+    © 2025 <a href="https://findreward.net" target="_blank"
+    style="color:#047857; text-decoration:none;">FindReward.net</a> — All rights reserved
 </div>
 """, unsafe_allow_html=True)
