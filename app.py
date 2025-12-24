@@ -8,182 +8,184 @@ from langchain_chroma import Chroma
 from langchain_core.documents import Document
 import os
 from langchain_core.messages import SystemMessage, HumanMessage
+# --------------------------------------------------
+# ENV
+# --------------------------------------------------
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# -------------------- PAGE CONFIG --------------------
-st.set_page_config(page_title="🤖 AI CV Assistant", layout="wide")
+# --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
+st.set_page_config(page_title="🤖 AI CV Assistant", layout="centered")
 st.markdown("<h1 style='text-align:center; color:#4B0082;'>🤖 AI CV Assistant</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#666;'>Upload CV & Job Description for analysis</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#666;'>Interview a candidate through their AI twin</p>", unsafe_allow_html=True)
 st.markdown("---")
 
-# -------------------- SECRETS --------------------
-openai_api_key = os.getenv("OPENAI_API_KEY")
-if not openai_api_key:
-    st.warning("❌ OpenAI API key not set. Please set it in Streamlit Secrets.")
-llm = ChatOpenAI(model="gpt-4o", temperature=0, openai_api_key=openai_api_key)
-embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=openai_api_key)
+# --------------------------------------------------
+# MODELS
+# --------------------------------------------------
+if not OPENAI_API_KEY:
+    st.error("❌ OPENAI_API_KEY not set in Streamlit Secrets")
+    st.stop()
 
-# -------------------- SESSION STATE --------------------
-for key in ["cv_profile", "vectorstore", "chat_history", "job_profile", "match_analysis"]:
-    if key not in st.session_state or st.session_state[key] is None:
-        st.session_state[key] = [] if key=="chat_history" else None
+llm = ChatOpenAI(model="gpt-4o", temperature=0, openai_api_key=OPENAI_API_KEY)
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=OPENAI_API_KEY)
 
-# -------------------- HELPERS --------------------
-def safe_json_load(text: str) -> dict:
-    if not text or not text.strip(): raise ValueError("Empty LLM output")
+# --------------------------------------------------
+# SESSION STATE
+# --------------------------------------------------
+for key, default in {
+    "cv_profile": None,
+    "job_profile": None,
+    "match_analysis": None,
+    "vectorstore": None,
+    "chat_history": []
+}.items():
+    if key not in st.session_state:
+        st.session_state[key] = default
+
+# --------------------------------------------------
+# STYLES
+# --------------------------------------------------
+st.markdown("""
+<style>
+.upload-hint { font-size:0.85rem; color:#6b7280; margin-bottom:0.25rem; }
+.chat-hr { background:#F0F0F0; padding:12px; border-radius:12px; margin-bottom:5px; color:#000; }
+.chat-candidate { background:#E6E6FA; padding:12px; border-radius:12px; margin-bottom:12px; color:#000; }
+.match-box { background:#ECFDF5; border-left:5px solid #10B981; padding:12px; border-radius:8px; }
+</style>
+""", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# HELPERS
+# --------------------------------------------------
+def safe_json(text):
     match = re.search(r"\{.*\}", text, re.DOTALL)
-    if not match: raise ValueError("No JSON found in output")
+    if not match:
+        raise ValueError("No JSON found")
     return json.loads(match.group(0))
 
-def extract_text_from_pdf(file) -> list[Document]:
+def extract_pdf(file):
     reader = PdfReader(file)
     docs = []
     for i, page in enumerate(reader.pages):
-        text = page.extract_text()
-        if text and text.strip():
-            docs.append(Document(page_content=text, metadata={"page": i+1}))
+        if page.extract_text():
+            docs.append(Document(page_content=page.extract_text(), metadata={"page": i+1}))
     return docs
 
-def extract_cv_profile(documents: list[Document]) -> dict:
-    full_text = "\n\n".join(d.page_content for d in documents)
-    prompt = f"Return only JSON with CV info. CV TEXT: {full_text}"
-    response = llm.invoke([SystemMessage(content="CV parser"), HumanMessage(content=prompt)])
-    return safe_json_load(response.content)
+def parse_cv(docs):
+    text = "\n\n".join(d.page_content for d in docs)
+    prompt = f"Return ONLY valid JSON with CV info:\n{text}"
+    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
-def extract_job_profile(text: str) -> dict:
-    prompt = f"Return only JSON with Job info. JOB TEXT: {text}"
-    response = llm.invoke([SystemMessage(content="Job parser"), HumanMessage(content=prompt)])
-    return safe_json_load(response.content)
+def parse_job(text):
+    prompt = f"Return ONLY valid JSON with Job info:\n{text}"
+    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
-def analyze_match(cv: dict, job: dict) -> dict:
-    prompt = f"Return only JSON with match_score (0-100), strengths, missing_skills, reason. CV: {json.dumps(cv)} JOB: {json.dumps(job)}"
-    response = llm.invoke([SystemMessage(content="Match analyzer"), HumanMessage(content=prompt)])
-    return safe_json_load(response.content)
+def match_cv_job(cv, job):
+    prompt = f"""
+Return ONLY JSON:
+{{"match_score":0-100,"reason":"short explanation"}}
 
-# -------------------- FILE UPLOAD UI --------------------
-st.markdown("### 📂 Upload Documents", unsafe_allow_html=True)
+CV: {json.dumps(cv)}
+JOB: {json.dumps(job)}
+"""
+    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
-col1, col2, col3 = st.columns([1,2,1])
+# --------------------------------------------------
+# UPLOAD UI
+# --------------------------------------------------
+st.markdown("### 📂 Upload Documents")
 
-with col2:
-    st.markdown(
-        """
-        <div style='background-color:#E6E6FA; padding:10px; border-radius:8px; text-align:center;'>
-            <h4 style='color:#4B0082; margin:0;'>📂 Upload CV (PDF)</h4>
-            <p style='color:#666; font-size:12px; margin:4px 0 0 0;'>Select candidate CV</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    uploaded_cv = st.file_uploader(
-        "",
-        type=["pdf"],
-        key="cv",
-        label_visibility="collapsed"
-    )
+st.markdown("<div class='upload-hint'>⬆️ Upload candidate CV (PDF)</div>", unsafe_allow_html=True)
+uploaded_cv = st.file_uploader("CV", type=["pdf"], label_visibility="collapsed")
 
-    st.markdown(
-        """
-        <div style='background-color:#FFF0F5; padding:10px; border-radius:8px; text-align:center; margin-top:10px;'>
-            <h4 style='color:#4B0082; margin:0;'>📄 Upload JD</h4>
-            <p style='color:#666; font-size:12px; margin:4px 0 0 0;'>PDF or TXT</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    uploaded_jd = st.file_uploader(
-        "",
-        type=["pdf", "txt"],
-        key="jd",
-        label_visibility="collapsed"
-    )
+st.markdown("<div class='upload-hint'>⬆️ Upload job description (PDF or TXT)</div>", unsafe_allow_html=True)
+uploaded_jd = st.file_uploader("JD", type=["pdf", "txt"], label_visibility="collapsed")
 
-
-# -------------------- PROCESS CV --------------------
-if uploaded_cv and st.session_state.cv_profile is None:
+# --------------------------------------------------
+# PROCESS FILES
+# --------------------------------------------------
+if uploaded_cv and not st.session_state.cv_profile:
     with st.spinner("Processing CV..."):
-        pages = extract_text_from_pdf(uploaded_cv)
-        st.session_state.cv_profile = extract_cv_profile(pages)
-        splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        chunks = splitter.split_documents(pages)
-        st.session_state.vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings)
-    st.success("✅ CV processed successfully")
+        cv_docs = extract_pdf(uploaded_cv)
+        st.session_state.cv_profile = parse_cv(cv_docs)
 
-# -------------------- PROCESS JOB --------------------
-if uploaded_jd and st.session_state.job_profile is None:
+        splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = splitter.split_documents(cv_docs)
+        st.session_state.vectorstore = Chroma.from_documents(chunks, embeddings)
+
+    st.success("✅ CV processed")
+
+if uploaded_jd and not st.session_state.job_profile:
     with st.spinner("Processing Job Description..."):
         if uploaded_jd.type == "application/pdf":
-            jd_pages = extract_text_from_pdf(uploaded_jd)
-            jd_text = "\n\n".join(d.page_content for p in jd_pages)
+            jd_docs = extract_pdf(uploaded_jd)
+            jd_text = "\n\n".join(d.page_content for d in jd_docs)
         else:
             jd_text = uploaded_jd.read().decode("utf-8")
-        st.session_state.job_profile = extract_job_profile(jd_text)
-    st.success("✅ Job Description processed successfully")
 
-# -------------------- MATCH ANALYSIS --------------------
+        st.session_state.job_profile = parse_job(jd_text)
+
+    st.success("✅ Job Description processed")
+
+# --------------------------------------------------
+# MATCH ANALYSIS
+# --------------------------------------------------
 if st.session_state.cv_profile and st.session_state.job_profile and not st.session_state.match_analysis:
-    with st.spinner("Analyzing CV-Job match..."):
-        st.session_state.match_analysis = analyze_match(st.session_state.cv_profile, st.session_state.job_profile)
+    with st.spinner("Analyzing match..."):
+        st.session_state.match_analysis = match_cv_job(
+            st.session_state.cv_profile,
+            st.session_state.job_profile
+        )
 
 if st.session_state.match_analysis:
-    score = st.session_state.match_analysis.get("match_score","N/A")
-    reason = st.session_state.match_analysis.get("reason","No reason provided.")
-    col1, col2 = st.columns([1,3])
-    with col1:
-        st.markdown(f"<h2 style='color:#4B0082;'>{score}%</h2>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#666;'>Preliminary Match Score</p>", unsafe_allow_html=True)
-    with col2:
-        st.info(f"**Reason:** {reason}")
+    st.markdown(
+        f"""
+        <div class="match-box">
+        <b>Match Score:</b> {st.session_state.match_analysis["match_score"]}%<br/>
+        <b>Reason:</b> {st.session_state.match_analysis["reason"]}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
+# --------------------------------------------------
+# INTERVIEW
+# --------------------------------------------------
 st.markdown("---")
+st.subheader("🎤 HR Interview")
 
-# -------------------- INTERVIEW MODE --------------------
-if st.session_state.vectorstore and st.session_state.cv_profile:
-    st.subheader("🎤 HR Interview Simulation")
-    question = st.text_input("Ask a question to the candidate")
+if not st.session_state.cv_profile:
+    st.info("Upload a CV to start the interview.")
+else:
+    question = st.text_input("Ask a question", placeholder="Why are you a good fit for this role?")
     if st.button("Ask") and question:
-        retriever = st.session_state.vectorstore.as_retriever(search_kwargs={"k": 4})
+        retriever = st.session_state.vectorstore.as_retriever(k=4)
         docs = retriever.invoke(question)
         context = "\n\n".join(d.page_content for d in docs)
-        system_prompt = f"""
-You are the AI assistant of the CV owner.
-Answer in FIRST PERSON.
-Job Info: {json.dumps(st.session_state.job_profile, indent=2)}
-Match Analysis: {json.dumps(st.session_state.match_analysis, indent=2)}
-Rules: Highlight strengths, address gaps honestly, confident, no invented experience.
-"""
-        response = llm.invoke([SystemMessage(content=system_prompt), HumanMessage(content=f"Question: {question}\nContext:\n{context}")])
-        st.session_state.chat_history.append((question, response.content))
 
-# -------------------- DISPLAY CHAT WITH BUBBLES --------------------
-if st.session_state.chat_history:
-    for q, a in reversed(st.session_state.chat_history):
-        # HR question
-        st.markdown(
-            f"""
-            <div style="
-                background-color:#F0F0F0;
-                padding:12px;
-                border-radius:12px;
-                margin-bottom:5px;
-                color:#000;
-            ">
-            <b>HR:</b> {q}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-        # Candidate answer
-        st.markdown(
-            f"""
-            <div style="
-                background-color:#E6E6FA;
-                padding:12px;
-                border-radius:12px;
-                margin-bottom:10px;
-                color:#000;
-            ">
-            <b>Candidate:</b> {a}
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        prompt = f"""
+You are the candidate speaking in FIRST PERSON.
+
+Job Info:
+{json.dumps(st.session_state.job_profile)}
+
+Match Info:
+{json.dumps(st.session_state.match_analysis)}
+
+Context:
+{context}
+
+Answer clearly and professionally.
+"""
+        answer = llm.invoke([SystemMessage(content=prompt), HumanMessage(content=question)]).content
+        st.session_state.chat_history.append((question, answer))
+
+# --------------------------------------------------
+# CHAT DISPLAY
+# --------------------------------------------------
+for q, a in reversed(st.session_state.chat_history):
+    st.markdown(f"<div class='chat-hr'><b>HR:</b> {q}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='chat-candidate'><b>Candidate:</b> {a}</div>", unsafe_allow_html=True)
