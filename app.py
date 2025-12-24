@@ -147,7 +147,7 @@ if st.session_state.match_analysis:
     st.markdown(
         f"""
         <div style="
-            background-color:#ECFDF5;
+            background-color:#2F3632;
             border-left:6px solid #10B981;
             padding:14px;
             border-radius:10px;
