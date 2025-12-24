@@ -7,3 +7,5 @@ chromadb
 langchain-openai
 langchain-text-splitters
 langchain-chroma
+requests
+beautifulsoup4
