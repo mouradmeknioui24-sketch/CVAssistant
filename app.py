@@ -55,6 +55,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<p style="
+    font-size:13px;
+    color:#374151;
+    margin-top:6px;
+">
+    Built for job seekers and recruiters to simulate real hiring conversations before the first interview.
+</p>
+""", unsafe_allow_html=True)
+
 st.markdown("---")
 
 
