@@ -17,6 +17,12 @@ from bs4 import BeautifulSoup
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+
+# --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
+st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
+
 st.markdown("""
 <div style="text-align:center; margin-top:10px;">
     <h1 style="
@@ -32,15 +38,25 @@ st.markdown("""
         font-size:15px;
         color:#6B7280;
         max-width:520px;
-        margin:0 auto 8px auto;
+        margin:0 auto 6px auto;
         line-height:1.6;
     ">
         Analyze your CV, compare it to real job roles, and practice interviews
         with your AI twin — before you apply.
     </p>
 
+    <p style="
+        font-size:13px;
+        color:#374151;
+        max-width:520px;
+        margin:0 auto 10px auto;
+        line-height:1.5;
+    ">
+        Built for job seekers and recruiters to simulate real hiring conversations before the first interview.
+    </p>
+
     <div style="
-        margin-top:8px;
+        margin-top:6px;
         font-size:12px;
         font-weight:600;
         letter-spacing:0.08em;
@@ -54,24 +70,6 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown("""
-<p style="
-    font-size:13px;
-    color:#374151;
-    margin-top:6px;
-">
-    Built for job seekers and recruiters to simulate real hiring conversations before the first interview.
-</p>
-""", unsafe_allow_html=True)
-
-st.markdown("---")
-
-
-# --------------------------------------------------
-# PAGE CONFIG
-# --------------------------------------------------
-st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
 
 st.markdown("""
 <div style="text-align:center;">
