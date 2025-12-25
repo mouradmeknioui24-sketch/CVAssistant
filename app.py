@@ -38,8 +38,8 @@ st.markdown("""
         POWERED BY <a href="https://findreward.net" target="_blank"
         style="color:#047857; text-decoration:none;">FindReward.net</a>
     </div>
-</div>
-<div style="text-align:center; margin-top:14px;">
+
+    <div style="text-align:center; margin-top:14px;">
 
     <h2 style="
         color:#1F2937;
@@ -49,6 +49,7 @@ st.markdown("""
     ">
         Know Your Job Fit. Instantly.
     </h2>
+    </div>
 
     <p style="
         font-size:15px;
@@ -72,7 +73,6 @@ st.markdown("""
         before the first interview.
     </p>
 
-</div>
 """, unsafe_allow_html=True)
 # ==================================================
 
