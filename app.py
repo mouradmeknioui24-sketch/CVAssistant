@@ -10,7 +10,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 import os
 import requests
 from bs4 import BeautifulSoup
-
+import streamlit.components.v1 as components
 # --------------------------------------------------
 # ENV
 # --------------------------------------------------
@@ -125,9 +125,13 @@ st.markdown("""
     color:#064E3B;
 }
 </style>
-<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
 """, unsafe_allow_html=True)
-
+components.html(
+    """
+    <script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
+    """,
+    height=0,
+)
 # --------------------------------------------------
 # HELPERS
 # --------------------------------------------------
