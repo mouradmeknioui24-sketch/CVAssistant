@@ -17,6 +17,47 @@ from bs4 import BeautifulSoup
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
+st.markdown("""
+<div style="text-align:center; margin-top:10px;">
+    <h1 style="
+        color:#1F2937;
+        font-size:32px;
+        font-weight:800;
+        margin-bottom:6px;
+    ">
+        Know Your Job Fit. Instantly.
+    </h1>
+
+    <p style="
+        font-size:15px;
+        color:#6B7280;
+        max-width:520px;
+        margin:0 auto 8px auto;
+        line-height:1.6;
+    ">
+        Analyze your CV, compare it to real job roles, and practice interviews
+        with your AI twin — before you apply.
+    </p>
+
+    <div style="
+        margin-top:8px;
+        font-size:12px;
+        font-weight:600;
+        letter-spacing:0.08em;
+        color:#047857;
+    ">
+        POWERED BY
+        <a href="https://findreward.net" target="_blank"
+           style="color:#047857; text-decoration:none;">
+           FindReward.net
+        </a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("---")
+
+
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
