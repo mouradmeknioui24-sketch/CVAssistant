@@ -25,16 +25,6 @@ st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="cente
 st.markdown("""
 <div style="text-align:center;">
     <h1 style="color:#4B0082; margin-bottom:4px;">🤖 AI CV Assistant</h1>
-    <div style="
-        font-size:15px;
-        color:#6B7280;
-        max-width:520px;
-        margin:0 auto 6px auto;
-        line-height:1.6;
-    ">
-        Analyze your CV, compare it to real job roles, and practice interviews
-        with your AI twin — before you apply.
-    </div>
     <div style="font-size:14px; color:#6B7280;">
         Interview a candidate through their AI twin
     </div>
@@ -48,31 +38,48 @@ st.markdown("""
         POWERED BY <a href="https://findreward.net" target="_blank"
         style="color:#047857; text-decoration:none;">FindReward.net</a>
     </div>
-    <div style="
-        font-size:13px;
-        color:#374151;
-        max-width:520px;
-        margin:0 auto 8px auto;
-        line-height:1.5;
-    ">
-        Built for job seekers and recruiters to simulate realistic hiring
-        conversations before the first interview.
-    </div>
-</div>
-<div style="display:none;">
-    <script type="text/javascript">
-        (function(c,l,a,r,i,t,y){
-            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-        })(window, document, "clarity", "script", "uqq6o9ppuj");
-    </script>
-</div>
-<div style="display:none;">
-<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
 </div>
 """, unsafe_allow_html=True)
 
+# ==================================================
+# 🔽🔽🔽 HERO SECTION — INJECTED (ONLY ADDITION)
+# ==================================================
+st.markdown("""
+<div style="text-align:center; margin-top:14px;">
+
+    <h2 style="
+        color:#1F2937;
+        font-size:30px;
+        font-weight:800;
+        margin-bottom:6px;
+    ">
+        Know Your Job Fit. Instantly.
+    </h2>
+
+    <p style="
+        font-size:15px;
+        color:#6B7280;
+        max-width:520px;
+        margin:0 auto 6px auto;
+        line-height:1.6;
+    ">
+        Upload your CV, compare it to real job roles, and practice interviews
+        with your AI twin — before you apply.
+    </p>
+
+    <p style="
+        font-size:13px;
+        color:#374151;
+        max-width:520px;
+        margin:0 auto 10px auto;
+        line-height:1.5;
+    ">
+        Built for job seekers and recruiters to simulate realistic hiring conversations
+        before the first interview.
+    </p>
+
+</div>
+""", unsafe_allow_html=True)
 # ==================================================
 
 st.markdown("---")
