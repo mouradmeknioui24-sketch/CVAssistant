@@ -22,6 +22,27 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
+st.markdown(
+    """
+    <style>
+        /* Remove Streamlit default top padding */
+        .block-container {
+            padding-top: 1rem !important;
+        }
+
+        /* Remove extra space above first element */
+        header {
+            margin-bottom: 0 !important;
+        }
+
+        /* Optional: tighten overall vertical rhythm */
+        section.main > div {
+            padding-top: 0 !important;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 st.set_page_config(page_title="Reward CV Assistant | FindReward", layout="centered")
 
 # --------------------------------------------------
