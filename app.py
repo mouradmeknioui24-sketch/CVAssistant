@@ -22,7 +22,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
-st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
+st.set_page_config(page_title="Reward CV Assistant | FindReward", layout="centered")
 
 # --------------------------------------------------
 # ANALYTICS (LOAD ONCE)
