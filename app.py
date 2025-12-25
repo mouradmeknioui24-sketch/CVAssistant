@@ -25,6 +25,16 @@ st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="cente
 st.markdown("""
 <div style="text-align:center;">
     <h1 style="color:#4B0082; margin-bottom:4px;">🤖 AI CV Assistant</h1>
+    <div style="
+        font-size:15px;
+        color:#6B7280;
+        max-width:520px;
+        margin:0 auto 6px auto;
+        line-height:1.6;
+    ">
+        Analyze your CV, compare it to real job roles, and practice interviews
+        with your AI twin — before you apply.
+    </div>
     <div style="font-size:14px; color:#6B7280;">
         Interview a candidate through their AI twin
     </div>
@@ -37,16 +47,6 @@ st.markdown("""
     ">
         POWERED BY <a href="https://findreward.net" target="_blank"
         style="color:#047857; text-decoration:none;">FindReward.net</a>
-    </div>
-    <div style="
-        font-size:15px;
-        color:#6B7280;
-        max-width:520px;
-        margin:0 auto 6px auto;
-        line-height:1.6;
-    ">
-        Analyze your CV, compare it to real job roles, and practice interviews
-        with your AI twin — before you apply.
     </div>
     <div style="
         font-size:13px;
