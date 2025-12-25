@@ -20,26 +20,47 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
+# PAGE CONFIG
+# --------------------------------------------------
 st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
 
+# --------------------------------------------------
+# ANALYTICS (LOAD ONCE)
+# --------------------------------------------------
+if "analytics_loaded" not in st.session_state:
+    components.html(
+        """
+        <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "uqq6o9ppuj");
+        </script>
+
+        <script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
+        """,
+        height=0,
+    )
+    st.session_state.analytics_loaded = True
+
+# --------------------------------------------------
+# HEADER
+# --------------------------------------------------
 st.markdown("""
 <div style="text-align:center;">
-    <h1 style="color:#4B0082; margin-bottom:4px;">🤖 AI CV Assistant</h1>
-    <div style="font-size:14px; color:#6B7280;">
-        Interview a candidate through their AI twin
+    <h1 style="color:#4B0082;">🤖 AI CV Assistant</h1>
+    <div style="font-size:15px; color:#6B7280; max-width:520px; margin:auto;">
+        Analyze your CV, compare it to real job roles, and practice interviews
+        with your AI twin — before you apply.
     </div>
-    <div style="
-        margin-top:6px;
-        font-size:12px;
-        font-weight:600;
-        color:#047857;
-        letter-spacing:0.08em;
-    ">
+    <div style="margin-top:6px; font-size:12px; font-weight:600; color:#047857;">
         POWERED BY <a href="https://findreward.net" target="_blank"
         style="color:#047857; text-decoration:none;">FindReward.net</a>
     </div>
 </div>
 """, unsafe_allow_html=True)
+
 st.markdown("---")
 
 # --------------------------------------------------
