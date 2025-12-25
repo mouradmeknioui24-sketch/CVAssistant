@@ -39,12 +39,6 @@ st.markdown("""
         style="color:#047857; text-decoration:none;">FindReward.net</a>
     </div>
 </div>
-""", unsafe_allow_html=True)
-
-# ==================================================
-# 🔽🔽🔽 HERO SECTION — INJECTED (ONLY ADDITION)
-# ==================================================
-st.markdown("""
 <div style="text-align:center; margin-top:14px;">
 
     <h2 style="
