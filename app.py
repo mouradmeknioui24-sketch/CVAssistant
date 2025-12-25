@@ -114,27 +114,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-components.html(
-    """
-    <script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
-    """,
-    height=0,
-)
 
-components.html(
-        """
-        <script type="text/javascript">
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", "uqq6o9ppuj");
-        </script>
-
-        <script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
-        """,
-        height=0,
-)
 
 # --------------------------------------------------
 # HELPERS
