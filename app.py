@@ -23,54 +23,41 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
 
 st.markdown("""
-<div style="text-align:center; margin-bottom:12px;">
+<div style="text-align:center; margin-bottom:10px;">
+    <h1 style="color:#4B0082; margin-bottom:4px;">🤖 AI CV Assistant</h1>
 
-    <h1 style="
-        color:#4B0082;
-        font-size:34px;
-        font-weight:800;
-        margin-bottom:6px;
-    ">
-        🤖 AI CV Assistant
-    </h1>
+    <div style="font-size:14px; color:#6B7280; margin-bottom:6px;">
+        Interview a candidate through their AI twin
+    </div>
 
-    <h2 style="
-        color:#1F2937;
-        font-size:22px;
-        font-weight:700;
-        margin-bottom:6px;
-    ">
-        Know Your Job Fit. Instantly.
-    </h2>
-
-    <p style="
+    <div style="
         font-size:15px;
         color:#6B7280;
         max-width:520px;
         margin:0 auto 6px auto;
         line-height:1.6;
     ">
-        Upload your CV, compare it to real job roles, and practice interviews
+        Analyze your CV, compare it to real job roles, and practice interviews
         with your AI twin — before you apply.
-    </p>
+    </div>
 
-    <p style="
+    <div style="
         font-size:13px;
         color:#374151;
         max-width:520px;
-        margin:0 auto 10px auto;
+        margin:0 auto 8px auto;
         line-height:1.5;
     ">
         Built for job seekers and recruiters to simulate realistic hiring
         conversations before the first interview.
-    </p>
+    </div>
 
     <div style="
         margin-top:6px;
         font-size:12px;
         font-weight:600;
-        letter-spacing:0.08em;
         color:#047857;
+        letter-spacing:0.08em;
     ">
         POWERED BY
         <a href="https://findreward.net" target="_blank"
@@ -78,7 +65,6 @@ st.markdown("""
            FindReward.net
         </a>
     </div>
-
 </div>
 """, unsafe_allow_html=True)
 
