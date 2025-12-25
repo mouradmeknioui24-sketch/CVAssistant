@@ -68,6 +68,9 @@ st.markdown("""
         })(window, document, "clarity", "script", "uqq6o9ppuj");
     </script>
 </div>
+<div style="display:none;">
+<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
+</div>
 """, unsafe_allow_html=True)
 
 # ==================================================
