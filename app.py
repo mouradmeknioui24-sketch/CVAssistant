@@ -1,3 +1,8 @@
+i am giving you my code inject this in my code and please change nothing else
+
+
+
+
 import streamlit as st
 from dotenv import load_dotenv
 import json, re
@@ -40,48 +45,6 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-# ==================================================
-# 🔽🔽🔽 HERO SECTION — INJECTED (ONLY ADDITION)
-# ==================================================
-st.markdown("""
-<div style="text-align:center; margin-top:14px;">
-
-    <h2 style="
-        color:#1F2937;
-        font-size:30px;
-        font-weight:800;
-        margin-bottom:6px;
-    ">
-        Know Your Job Fit. Instantly.
-    </h2>
-
-    <p style="
-        font-size:15px;
-        color:#6B7280;
-        max-width:520px;
-        margin:0 auto 6px auto;
-        line-height:1.6;
-    ">
-        Upload your CV, compare it to real job roles, and practice interviews
-        with your AI twin — before you apply.
-    </p>
-
-    <p style="
-        font-size:13px;
-        color:#374151;
-        max-width:520px;
-        margin:0 auto 10px auto;
-        line-height:1.5;
-    ">
-        Built for job seekers and recruiters to simulate realistic hiring conversations
-        before the first interview.
-    </p>
-
-</div>
-""", unsafe_allow_html=True)
-# ==================================================
-
 st.markdown("---")
 
 # --------------------------------------------------
@@ -138,18 +101,20 @@ st.markdown("""
 # HELPERS
 # --------------------------------------------------
 def safe_json(text):
+    """Try to extract JSON from LLM output robustly."""
     if not text or not text.strip():
         st.error("LLM returned empty output. Try again.")
         return {}
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
-        st.error("Could not find valid JSON in LLM output.")
-        st.error(text)
+        st.error("Could not find valid JSON in LLM output. Please check your input.")
+        st.error(f"Raw output:\n{text}")
         return {}
     try:
         return json.loads(match.group(0))
     except Exception as e:
-        st.error(e)
+        st.error(f"Error parsing JSON: {e}")
+        st.error(f"Raw JSON string:\n{match.group(0)}")
         return {}
 
 def extract_pdf(file):
@@ -162,16 +127,21 @@ def extract_pdf(file):
 
 def parse_cv(docs):
     text = "\n\n".join(d.page_content for d in docs)
-    return safe_json(llm.invoke([HumanMessage(content=f"Return ONLY valid JSON with CV info:\n{text}")]).content)
+    prompt = f"Return ONLY valid JSON with CV info:\n{text}"
+    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
 def parse_job(text):
-    return safe_json(llm.invoke([HumanMessage(content=f"Return ONLY valid JSON with Job info:\n{text}")]).content)
+    prompt = f"Return ONLY valid JSON with Job info:\n{text}"
+    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
 def match_cv_job(cv, job):
-    prompt = f"""Return ONLY JSON:
+    prompt = f"""
+Return ONLY JSON:
 {{"match_score":0-100,"reason":"short explanation"}}
+
 CV: {json.dumps(cv)}
-JOB: {json.dumps(job)}"""
+JOB: {json.dumps(job)}
+"""
     return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
 # --------------------------------------------------
@@ -182,13 +152,13 @@ def fetch_job_text_from_link(url):
         response = requests.get(url, timeout=10)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
-        for tag in soup(["script", "style"]):
-            tag.decompose()
+        for script in soup(["script", "style"]):
+            script.decompose()
         text = soup.get_text(separator="\n")
-        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
         return "\n".join(lines)
     except Exception as e:
-        return str(e)
+        return f"Could not fetch page content: {e}"
 
 # --------------------------------------------------
 # UPLOAD CV
@@ -201,8 +171,11 @@ if uploaded_cv and not st.session_state.cv_profile:
     with st.spinner("Processing CV..."):
         cv_docs = extract_pdf(uploaded_cv)
         st.session_state.cv_profile = parse_cv(cv_docs)
-        chunks = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_documents(cv_docs)
+
+        splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = splitter.split_documents(cv_docs)
         st.session_state.vectorstore = Chroma.from_documents(chunks, embeddings)
+
     st.success("✅ CV processed")
 
 # --------------------------------------------------
@@ -213,6 +186,8 @@ job_option = st.radio(
     "Choose how to provide the Job Description:",
     ("Upload File", "Provide Job Link", "Paste Text")
 )
+
+jd_text = None
 
 if job_option == "Upload File":
     uploaded_jd = st.file_uploader("Job Description", type=["pdf", "txt"], label_visibility="collapsed")
@@ -227,20 +202,110 @@ if job_option == "Upload File":
         st.success("✅ Job Description processed")
 
 elif job_option == "Provide Job Link":
-    job_link = st.text_input("Paste job link here")
+    job_link = st.text_input("Paste job link here (Indeed, LinkedIn, etc.)")
     if job_link and not st.session_state.job_profile:
-        with st.spinner("Fetching job page..."):
-            st.session_state.job_profile = parse_job(fetch_job_text_from_link(job_link))
-        st.success("✅ Job Description processed")
+        with st.spinner("Fetching and processing job link..."):
+            jd_text = fetch_job_text_from_link(job_link)
+            st.session_state.job_profile = parse_job(jd_text)
+        st.success("✅ Job Description processed from link")
 
 elif job_option == "Paste Text":
-    jd_text = st.text_area("Paste the job description here")
-    if jd_text and not st.session_state.job_profile:
-        with st.spinner("Processing job text..."):
+    jd_text_input = st.text_area("Paste the job description here")
+    if jd_text_input and not st.session_state.job_profile:
+        with st.spinner("Processing pasted job description..."):
+            jd_text = jd_text_input
             st.session_state.job_profile = parse_job(jd_text)
-        st.success("✅ Job Description processed")
+        st.success("✅ Job Description processed from pasted text")
 
 # --------------------------------------------------
-# MATCH ANALYSIS + INTERVIEW + FOOTER
-# (UNCHANGED)
+# MATCH ANALYSIS (PRO CARD)
 # --------------------------------------------------
+if st.session_state.cv_profile and st.session_state.job_profile and not st.session_state.match_analysis:
+    with st.spinner("Analyzing match..."):
+        st.session_state.match_analysis = match_cv_job(
+            st.session_state.cv_profile,
+            st.session_state.job_profile
+        )
+
+if st.session_state.match_analysis:
+    score = st.session_state.match_analysis["match_score"]
+    reason = st.session_state.match_analysis["reason"]
+
+    st.markdown(
+        f"""
+        <div style="
+            background-color:#2F3632;
+            border-left:6px solid #10B981;
+            padding:14px;
+            border-radius:10px;
+            color:#F7F5F5;
+            margin-top:12px;
+        ">
+            <div style="font-size:26px; font-weight:700;">
+                Match Score: {score}%
+            </div>
+            <div style="margin-top:6px; font-size:14px;">
+                <b>Reason:</b> {reason}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# --------------------------------------------------
+# HR INTERVIEW
+# --------------------------------------------------
+st.markdown("---")
+st.subheader("🎤 HR Interview")
+
+if st.session_state.vectorstore:
+    question = st.text_input("Ask a question", placeholder="Why are you a good fit for this role?")
+    if st.button("Ask") and question:
+        retriever = st.session_state.vectorstore.as_retriever(k=4)
+        docs = retriever.invoke(question)
+        context = "\n\n".join(d.page_content for d in docs)
+
+        prompt = f"""
+You are the candidate speaking in FIRST PERSON.
+
+Job Info:
+{json.dumps(st.session_state.job_profile)}
+
+Match Info:
+{json.dumps(st.session_state.match_analysis)}
+
+Context:
+{context}
+
+Answer clearly and professionally.
+"""
+        answer = llm.invoke([SystemMessage(content=prompt), HumanMessage(content=question)]).content
+        st.session_state.chat_history.append((question, answer))
+
+# --------------------------------------------------
+# CHAT DISPLAY
+# --------------------------------------------------
+for q, a in reversed(st.session_state.chat_history):
+    st.markdown(f"<div class='chat-hr'><b>HR:</b> {q}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='chat-candidate'><b>Candidate:</b> {a}</div>", unsafe_allow_html=True)
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
+st.markdown("""
+<hr/>
+<div style="text-align:center; font-size:12px; color:#6B7280;">
+    © 2025 <a href="https://findreward.net" target="_blank"
+    style="color:#047857; text-decoration:none;">FindReward.net</a> — All rights reserved
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "uqq6o9ppuj");
+</script>
+""", unsafe_allow_html=True)
