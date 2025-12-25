@@ -10,7 +10,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 import os
 import requests
 from bs4 import BeautifulSoup
-
+import streamlit.components.v1 as components
 # --------------------------------------------------
 # ENV
 # --------------------------------------------------
