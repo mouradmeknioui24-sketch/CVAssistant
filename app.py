@@ -23,13 +23,21 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
 
 st.markdown("""
-<div style="text-align:center; margin-bottom:10px;">
+<div style="text-align:center;">
     <h1 style="color:#4B0082; margin-bottom:4px;">🤖 AI CV Assistant</h1>
-
-    <div style="font-size:14px; color:#6B7280; margin-bottom:6px;">
+    <div style="font-size:14px; color:#6B7280;">
         Interview a candidate through their AI twin
     </div>
-
+    <div style="
+        margin-top:6px;
+        font-size:12px;
+        font-weight:600;
+        color:#047857;
+        letter-spacing:0.08em;
+    ">
+        POWERED BY <a href="https://findreward.net" target="_blank"
+        style="color:#047857; text-decoration:none;">FindReward.net</a>
+    </div>
     <div style="
         font-size:15px;
         color:#6B7280;
@@ -40,7 +48,6 @@ st.markdown("""
         Analyze your CV, compare it to real job roles, and practice interviews
         with your AI twin — before you apply.
     </div>
-
     <div style="
         font-size:13px;
         color:#374151;
@@ -51,23 +58,8 @@ st.markdown("""
         Built for job seekers and recruiters to simulate realistic hiring
         conversations before the first interview.
     </div>
-
-    <div style="
-        margin-top:6px;
-        font-size:12px;
-        font-weight:600;
-        color:#047857;
-        letter-spacing:0.08em;
-    ">
-        POWERED BY
-        <a href="https://findreward.net" target="_blank"
-           style="color:#047857; text-decoration:none;">
-           FindReward.net
-        </a>
-    </div>
 </div>
 """, unsafe_allow_html=True)
-
 
 # ==================================================
 
