@@ -27,8 +27,8 @@ st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="cente
 # --------------------------------------------------
 # ANALYTICS (LOAD ONCE)
 # --------------------------------------------------
-if "analytics_loaded" not in st.session_state:
-    components.html(
+
+components.html(
         """
         <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
@@ -40,9 +40,8 @@ if "analytics_loaded" not in st.session_state:
 
         <script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
         """,
-        height=0,
-    )
-    st.session_state.analytics_loaded = True
+        height=0,)
+
 
 # --------------------------------------------------
 # HEADER
