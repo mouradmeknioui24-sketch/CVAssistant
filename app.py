@@ -124,8 +124,8 @@ st.markdown("""
     margin-bottom:14px;
     color:#064E3B;
 }
-<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
 </style>
+<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
 """, unsafe_allow_html=True)
 
 # --------------------------------------------------
