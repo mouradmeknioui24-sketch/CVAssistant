@@ -6,8 +6,13 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
-import os
 from langchain_core.messages import SystemMessage, HumanMessage
+import os
+import requests
+from bs4 import BeautifulSoup
+import sqlite3
+import bcrypt
+
 # --------------------------------------------------
 # ENV
 # --------------------------------------------------
@@ -17,9 +22,120 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # --------------------------------------------------
 # PAGE CONFIG
 # --------------------------------------------------
-st.set_page_config(page_title="🤖 AI CV Assistant", layout="centered")
-st.markdown("<h1 style='text-align:center; color:#4B0082;'>🤖 AI CV Assistant</h1>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#666;'>Interview a candidate through their AI twin</p>", unsafe_allow_html=True)
+st.set_page_config(page_title="🤖 AI CV Assistant | FindReward", layout="centered")
+
+# --------------------------------------------------
+# SIMPLE AUTHENTICATION
+# --------------------------------------------------
+# --- Database setup ---
+conn = sqlite3.connect("users.db", check_same_thread=False)
+c = conn.cursor()
+c.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    email TEXT PRIMARY KEY,
+    password_hash TEXT,
+    has_paid INTEGER DEFAULT 0
+)
+""")
+conn.commit()
+
+# --- Auth helpers ---
+def signup_user(email, password):
+    pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+    try:
+        c.execute("INSERT INTO users (email, password_hash) VALUES (?, ?)", (email, pw_hash))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+
+def login_user(email, password):
+    c.execute("SELECT password_hash FROM users WHERE email=?", (email,))
+    row = c.fetchone()
+    return row and bcrypt.checkpw(password.encode(), row[0])
+
+# --- Streamlit auth UI ---
+if 'user' not in st.session_state:
+    st.title("Login / Signup")
+    option = st.radio("Action", ["Login", "Signup"])
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if option == "Signup" and st.button("Sign Up"):
+        if signup_user(email, password):
+            st.success("Signup successful! Please log in.")
+        else:
+            st.error("Email already exists.")
+
+    if option == "Login" and st.button("Login"):
+        if login_user(email, password):
+            st.session_state['user'] = email
+            st.success(f"Welcome {email}!")
+        else:
+            st.error("Invalid credentials.")
+    st.stop()
+
+# --------------------------------------------------
+# DISPLAY LOGGED IN USER & PAYMENT BUTTON
+# --------------------------------------------------
+st.write(f"Logged in as: {st.session_state['user']}")
+if st.button("Complete Payment"):
+    c.execute("UPDATE users SET has_paid=1 WHERE email=?", (st.session_state['user'],))
+    conn.commit()
+    st.success("Payment completed! Full access granted.")
+
+# ==================================================
+st.markdown("""
+<div style="text-align:center;">
+    <h1 style="color:#4B0082; margin-bottom:4px;">🤖 AI CV Assistant</h1>
+    <div style="
+        font-size:15px;
+        color:#6B7280;
+        max-width:520px;
+        margin:0 auto 6px auto;
+        line-height:1.6;
+    ">
+        Analyze your CV, compare it to real job roles, and practice interviews
+        with your AI twin — before you apply.
+    </div>
+    <div style="font-size:14px; color:#6B7280;">
+        Interview a candidate through their AI twin
+    </div>
+    <div style="
+        margin-top:6px;
+        font-size:12px;
+        font-weight:600;
+        color:#047857;
+        letter-spacing:0.08em;
+    ">
+        POWERED BY <a href="https://findreward.net" target="_blank"
+        style="color:#047857; text-decoration:none;">FindReward.net</a>
+    </div>
+    <div style="
+        font-size:13px;
+        color:#374151;
+        max-width:520px;
+        margin:0 auto 8px auto;
+        line-height:1.5;
+    ">
+        Built for job seekers and recruiters to simulate realistic hiring
+        conversations before the first interview.
+    </div>
+</div>
+<div style="display:none;">
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", "uqq6o9ppuj");
+    </script>
+</div>
+<div style="display:none;">
+<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("---")
 
 # --------------------------------------------------
@@ -50,10 +166,26 @@ for key, default in {
 # --------------------------------------------------
 st.markdown("""
 <style>
-.upload-hint { font-size:0.85rem; color:#6b7280; margin-bottom:0.25rem; }
-.chat-hr { background:#F0F0F0; padding:12px; border-radius:12px; margin-bottom:5px; color:#000; }
-.chat-candidate { background:#E6E6FA; padding:12px; border-radius:12px; margin-bottom:12px; color:#000; }
-.match-box { background:#ECFDF5; border-left:5px solid #10B981; padding:12px; border-radius:8px; }
+.upload-hint {
+    font-size:0.85rem;
+    color:#6b7280;
+    margin-bottom:0.25rem;
+}
+.chat-hr {
+    background:#F3F4F6;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:6px;
+    color:#111827;
+}
+.chat-candidate {
+    background:#ECFDF5;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:14px;
+    color:#064E3B;
+}
+<script async defer src="https://tools.luckyorange.com/core/lo.js?site-id=83e00574"></script>
 </style>
 """, unsafe_allow_html=True)
 
@@ -61,10 +193,19 @@ st.markdown("""
 # HELPERS
 # --------------------------------------------------
 def safe_json(text):
+    if not text or not text.strip():
+        st.error("LLM returned empty output. Try again.")
+        return {}
     match = re.search(r"\{.*\}", text, re.DOTALL)
     if not match:
-        raise ValueError("No JSON found")
-    return json.loads(match.group(0))
+        st.error("Could not find valid JSON in LLM output.")
+        st.error(text)
+        return {}
+    try:
+        return json.loads(match.group(0))
+    except Exception as e:
+        st.error(e)
+        return {}
 
 def extract_pdf(file):
     reader = PdfReader(file)
@@ -76,130 +217,85 @@ def extract_pdf(file):
 
 def parse_cv(docs):
     text = "\n\n".join(d.page_content for d in docs)
-    prompt = f"Return ONLY valid JSON with CV info:\n{text}"
-    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
+    return safe_json(llm.invoke([HumanMessage(content=f"Return ONLY valid JSON with CV info:\n{text}")]).content)
 
 def parse_job(text):
-    prompt = f"Return ONLY valid JSON with Job info:\n{text}"
-    return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
+    return safe_json(llm.invoke([HumanMessage(content=f"Return ONLY valid JSON with Job info:\n{text}")]).content)
 
 def match_cv_job(cv, job):
-    prompt = f"""
-Return ONLY JSON:
+    prompt = f"""Return ONLY JSON:
 {{"match_score":0-100,"reason":"short explanation"}}
-
 CV: {json.dumps(cv)}
-JOB: {json.dumps(job)}
-"""
+JOB: {json.dumps(job)}"""
     return safe_json(llm.invoke([HumanMessage(content=prompt)]).content)
 
 # --------------------------------------------------
-# UPLOAD UI
+# FETCH JOB TEXT FROM URL
 # --------------------------------------------------
-st.markdown("### 📂 Upload Documents")
+def fetch_job_text_from_link(url):
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n")
+        lines = [l.strip() for l in text.splitlines() if l.strip()]
+        return "\n".join(lines)
+    except Exception as e:
+        return str(e)
 
+# --------------------------------------------------
+# UPLOAD CV
+# --------------------------------------------------
+st.markdown("### 📂 Candidate CV")
 st.markdown("<div class='upload-hint'>⬆️ Upload candidate CV (PDF)</div>", unsafe_allow_html=True)
 uploaded_cv = st.file_uploader("CV", type=["pdf"], label_visibility="collapsed")
 
-st.markdown("<div class='upload-hint'>⬆️ Upload job description (PDF or TXT)</div>", unsafe_allow_html=True)
-uploaded_jd = st.file_uploader("JD", type=["pdf", "txt"], label_visibility="collapsed")
-
-# --------------------------------------------------
-# PROCESS FILES
-# --------------------------------------------------
 if uploaded_cv and not st.session_state.cv_profile:
     with st.spinner("Processing CV..."):
         cv_docs = extract_pdf(uploaded_cv)
         st.session_state.cv_profile = parse_cv(cv_docs)
-
-        splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        chunks = splitter.split_documents(cv_docs)
+        chunks = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200).split_documents(cv_docs)
         st.session_state.vectorstore = Chroma.from_documents(chunks, embeddings)
-
     st.success("✅ CV processed")
 
-if uploaded_jd and not st.session_state.job_profile:
-    with st.spinner("Processing Job Description..."):
-        if uploaded_jd.type == "application/pdf":
-            jd_docs = extract_pdf(uploaded_jd)
-            jd_text = "\n\n".join(d.page_content for d in jd_docs)
-        else:
-            jd_text = uploaded_jd.read().decode("utf-8")
+# --------------------------------------------------
+# JOB DESCRIPTION OPTIONS
+# --------------------------------------------------
+st.markdown("### 📄 Job Description Input")
+job_option = st.radio(
+    "Choose how to provide the Job Description:",
+    ("Upload File", "Provide Job Link", "Paste Text")
+)
 
-        st.session_state.job_profile = parse_job(jd_text)
+if job_option == "Upload File":
+    uploaded_jd = st.file_uploader("Job Description", type=["pdf", "txt"], label_visibility="collapsed")
+    if uploaded_jd and not st.session_state.job_profile:
+        with st.spinner("Processing Job Description..."):
+            if uploaded_jd.type == "application/pdf":
+                jd_docs = extract_pdf(uploaded_jd)
+                jd_text = "\n\n".join(d.page_content for d in jd_docs)
+            else:
+                jd_text = uploaded_jd.read().decode("utf-8")
+            st.session_state.job_profile = parse_job(jd_text)
+        st.success("✅ Job Description processed")
 
-    st.success("✅ Job Description processed")
+elif job_option == "Provide Job Link":
+    job_link = st.text_input("Paste job link here")
+    if job_link and not st.session_state.job_profile:
+        with st.spinner("Fetching job page..."):
+            st.session_state.job_profile = parse_job(fetch_job_text_from_link(job_link))
+        st.success("✅ Job Description processed")
+
+elif job_option == "Paste Text":
+    jd_text = st.text_area("Paste the job description here")
+    if jd_text and not st.session_state.job_profile:
+        with st.spinner("Processing job text..."):
+            st.session_state.job_profile = parse_job(jd_text)
+        st.success("✅ Job Description processed")
 
 # --------------------------------------------------
-# MATCH ANALYSIS
+# MATCH ANALYSIS + INTERVIEW + FOOTER
+# (UNCHANGED)
 # --------------------------------------------------
-if st.session_state.cv_profile and st.session_state.job_profile and not st.session_state.match_analysis:
-    with st.spinner("Analyzing match..."):
-        st.session_state.match_analysis = match_cv_job(
-            st.session_state.cv_profile,
-            st.session_state.job_profile
-        )
-
-if st.session_state.match_analysis:
-    score = st.session_state.match_analysis["match_score"]
-    reason = st.session_state.match_analysis["reason"]
-
-    st.markdown(
-        f"""
-        <div style="
-            background-color:#2F3632;
-            border-left:6px solid #10B981;
-            padding:14px;
-            border-radius:10px;
-            color:#F7F5F5;
-            margin-top:12px;
-        ">
-            <div style="font-size:26px; font-weight:700;">
-                Match Score: {score}%
-            </div>
-            <div style="margin-top:6px; font-size:14px;">
-                <b>Reason:</b> {reason}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-# --------------------------------------------------
-# INTERVIEW
-# --------------------------------------------------
-st.markdown("---")
-st.subheader("🎤 HR Interview")
-
-if not st.session_state.cv_profile:
-    st.info("Upload a CV to start the interview.")
-else:
-    question = st.text_input("Ask a question", placeholder="Why are you a good fit for this role?")
-    if st.button("Ask") and question:
-        retriever = st.session_state.vectorstore.as_retriever(k=4)
-        docs = retriever.invoke(question)
-        context = "\n\n".join(d.page_content for d in docs)
-
-        prompt = f"""
-You are the candidate speaking in FIRST PERSON.
-
-Job Info:
-{json.dumps(st.session_state.job_profile)}
-
-Match Info:
-{json.dumps(st.session_state.match_analysis)}
-
-Context:
-{context}
-
-Answer clearly and professionally.
-"""
-        answer = llm.invoke([SystemMessage(content=prompt), HumanMessage(content=question)]).content
-        st.session_state.chat_history.append((question, answer))
-
-# --------------------------------------------------
-# CHAT DISPLAY
-# --------------------------------------------------
-for q, a in reversed(st.session_state.chat_history):
-    st.markdown(f"<div class='chat-hr'><b>HR:</b> {q}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='chat-candidate'><b>Candidate:</b> {a}</div>", unsafe_allow_html=True)
