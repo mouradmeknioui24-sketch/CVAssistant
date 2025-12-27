@@ -292,7 +292,7 @@ if st.session_state.match_analysis:
 # HR INTERVIEW
 # --------------------------------------------------
 st.markdown("---")
-st.subheader("🎤 HR Interview")
+st.subheader("🧠 AI Interview Simulator (Candidate Responses)")
 
 if st.session_state.vectorstore:
     question = st.text_input("Ask a question", placeholder="Why are you a good fit for this role?")
