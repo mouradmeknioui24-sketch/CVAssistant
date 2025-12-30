@@ -275,7 +275,6 @@ if job_option == "Upload File":
             else:
                 jd_text = uploaded_jd.read().decode("utf-8")
             st.session_state.job_profile = parse_job(jd_text)
-        jd_url = upload_job_description(uploaded_jd, uploaded_jd.name)
         st.success("✅ Job Description processed")
 
 elif job_option == "Provide Job Link":
@@ -284,7 +283,6 @@ elif job_option == "Provide Job Link":
         with st.spinner("Fetching and processing job link..."):
             jd_text = fetch_job_text_from_link(job_link)
             st.session_state.job_profile = parse_job(jd_text)
-        jd_url = upload_job_description(jd_text, "job_from_link.txt")
         st.success("✅ Job Description processed from link")
 
 elif job_option == "Paste Text":
@@ -292,7 +290,6 @@ elif job_option == "Paste Text":
     if jd_text_input and not st.session_state.job_profile:
         with st.spinner("Processing pasted job description..."):
             jd_text = jd_text_input
-            jd_url = upload_job_description(jd_text, "job_pasted.txt")
             st.session_state.job_profile = parse_job(jd_text)
         st.success("✅ Job Description processed from pasted text")
 
