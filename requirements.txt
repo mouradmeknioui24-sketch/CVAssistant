@@ -10,3 +10,5 @@ langchain-chroma
 requests
 beautifulsoup4
 cloudinary
+io
+uuid

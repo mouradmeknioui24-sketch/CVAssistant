@@ -11,6 +11,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 import streamlit.components.v1 as components
+import io
+import uuid
 # --------------------------------------------------
 # ENV
 # --------------------------------------------------
@@ -275,7 +277,23 @@ def upload_cv_pdf(uploaded_file):
         folder="cvs"
     )
     return result["secure_url"]
-
+    
+def upload_text_to_cloudinary(text: str, folder="job_descriptions"):
+    filename = f"jd_{uuid.uuid4().hex}.txt"
+    file_buffer = io.BytesIO(text.encode("utf-8"))
+    
+    result = cloudinary.uploader.upload(
+        file_buffer,
+        resource_type="raw",
+        folder=folder,
+        public_id=filename.replace(".txt", ""),
+        overwrite=False
+    )
+    
+    return {
+        "url": result["secure_url"],
+        "public_id": result["public_id"]
+    }
 # --------------------------------------------------
 # UPLOAD CV
 # --------------------------------------------------
@@ -322,7 +340,7 @@ def upload_job_description(file_or_text, filename="job_description.pdf"):
         file_or_text,
         resource_type="raw",
         folder="job_descriptions",
-        public_id=filename.split(".")[0]  # remove extension for Cloudinary
+        public_id=filename  # remove extension for Cloudinary
     )
     return result["secure_url"]
 
@@ -337,6 +355,7 @@ if job_option == "Upload File":
                 jd_text = "\n\n".join(d.page_content for d in jd_docs)
             else:
                 jd_text = uploaded_jd.read().decode("utf-8")
+            cloudinary_data = upload_text_to_cloudinary(jd_text)
             st.session_state.job_profile = parse_job(jd_text)
         st.success("✅ Job Description processed")
 
@@ -345,6 +364,7 @@ elif job_option == "Provide Job Link":
     if job_link and not st.session_state.job_profile:
         with st.spinner("Fetching and processing job link..."):
             jd_text = fetch_job_text_from_link(job_link)
+            cloudinary_data = upload_text_to_cloudinary(jd_text)
             st.session_state.job_profile = parse_job(jd_text)
         st.success("✅ Job Description processed from link")
 
@@ -353,6 +373,7 @@ elif job_option == "Paste Text":
     if jd_text_input and not st.session_state.job_profile:
         with st.spinner("Processing pasted job description..."):
             jd_text = jd_text_input
+            cloudinary_data = upload_text_to_cloudinary(jd_text)
             st.session_state.job_profile = parse_job(jd_text)
         st.success("✅ Job Description processed from pasted text")
 
