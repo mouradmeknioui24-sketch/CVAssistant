@@ -60,7 +60,7 @@ st.markdown("""
 .donation-float {
     position: fixed;
     right: 18px;
-    bottom: 40px;
+    top: 40px;
     width: 260px;
     background: #1F2937; /* soft dark gray */
     border-radius: 18px;
