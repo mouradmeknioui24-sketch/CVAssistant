@@ -90,7 +90,7 @@ st.markdown("""
     <div style="font-weight:800; font-size:16px; margin-bottom:8px;">
         ❤️ Support this app<br>
         the funds will be used to animals and pets help<br>
-        to keep findreward.net running.
+        AND keep findreward.net community running.
     </div>
 """, unsafe_allow_html=True)
 
