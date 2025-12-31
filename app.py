@@ -110,7 +110,7 @@ button_html = """
             font-size:15px;
             cursor:pointer;
         ">
-        💳 Donate as you wish (even €1)
+        💳 Donate as you wish (even €1 will be helpfull)
     </button>
 </div>
 </div> <!-- close donation-float -->
