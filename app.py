@@ -54,6 +54,69 @@ st.markdown(
 )
 st.set_page_config(page_title="Reward CV Assistant | FindReward", layout="centered")
 
+# CSS for the floating donation card
+st.markdown("""
+<style>
+.donation-float {
+    position: fixed;
+    right: 18px;
+    bottom: 40px;
+    width: 260px;
+    background: #1F2937; /* soft dark gray */
+    border-radius: 18px;
+    padding: 16px;
+    color: #E5E7EB;
+    z-index: 9999;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    animation: slideIn 0.8s ease-out forwards;
+    font-family: "Arial", sans-serif;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(300px); opacity:0; }
+    to { transform: translateX(0); opacity:1; }
+}
+
+/* Hide on small screens */
+@media (max-width: 900px) {
+    .donation-float { display: none; }
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Card content
+st.markdown("""
+<div class="donation-float">
+    <div style="font-weight:800; font-size:16px; margin-bottom:8px;">
+        ❤️ Support this app<br>
+        the funds will be used to animals and pets help<br>
+        to keep findreward.net running.
+    </div>
+""", unsafe_allow_html=True)
+
+# Streamlit button inside the card
+# We use components.html to append the button inside the floating card
+button_html = """
+<div style="margin-top:10px;">
+    <button onclick="window.open('https://buy.stripe.com/aFabJ0fOu5XRb7bgzJfEk00', '_blank')"
+        style="
+            width:100%;
+            padding:10px;
+            background:#4F46E5; 
+            color:white;
+            font-weight:400;
+            border:none;
+            border-radius:10px;
+            font-size:15px;
+            cursor:pointer;
+        ">
+        💳 Donate as you wish (even €1)
+    </button>
+</div>
+</div> <!-- close donation-float -->
+"""
+components.html(button_html, height=100)
+
 # --------------------------------------------------
 # ANALYTICS (LOAD ONCE)
 # --------------------------------------------------
@@ -90,7 +153,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("---")
+
 
 # --------------------------------------------------
 # MODELS
