@@ -61,7 +61,7 @@ st.markdown("""
     position: fixed;
     right: 18px;
     top: 40px;
-    width: 150px;
+    width: 200px;
     background: #1F2937; /* soft dark gray */
     border-radius: 18px;
     padding: 16px;
