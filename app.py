@@ -23,9 +23,10 @@ import cloudinary.uploader
 import streamlit as st
 
 cloudinary.config(
-    cloud_name="dzg5kqpig",
-    api_key="749498397139358",
-    api_secret="H5npv6wBuHiRLFdfF4lCSbpLsyo"
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
+    api_key=os.getenv("CLOUDINARY_API_KEY"),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET"),
+    secure=True
 )
 
 # --------------------------------------------------
