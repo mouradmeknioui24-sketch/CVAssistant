@@ -16,12 +16,13 @@ import uuid
 # --------------------------------------------------
 # ENV
 # --------------------------------------------------
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 import cloudinary
 import cloudinary.uploader
 import streamlit as st
 
+load_dotenv()
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 cloudinary.config(
     cloud_name=os.getenv("cloud_name"),
     api_key=os.getenv("api_key"),
